@@ -1,31 +1,32 @@
 ; VendingMachine.clp
 ;
 ; Problem Description:
-; A vending machine accepts quarters, dimes, and nickels.
-; We aim to find the optimal way (using the least number of coins) to make a purchase of 65 cents.
+; I've designed a vending machine that accepts quarters, dimes, and nickels.
+; My goal is to find the most efficient way (using the fewest number of coins) to make a purchase of 65 cents.
 
-(defglobal
-    ?*QUARTER-VALUE* = 25
-    ?*DIME-VALUE* = 10
-    ?*NICKEL-VALUE* = 5
+; Using facts to define the constants.
+(deffacts global-values
+    (changes QUARTER-VALUE value 25)
+    (changes DIME-VALUE value 10)
+    (changes NICKEL-VALUE value 5)
 )
 
-; Facts representing the coins and their values
+; Here, I'm setting up the initial facts that represent the value of each coin.
 (deffacts coins-values
-    (coin quarter ?*QUARTER-VALUE*)
-    (coin dime ?*DIME-VALUE*)
-    (coin nickel ?*NICKEL-VALUE*)
+    (coin quarter)
+    (coin dime)
+    (coin nickel)
 )
 
-; Starting fact for the current amount
+; I'm initializing the starting amount to zero. This represents the amount currently inserted into the machine.
 (deffacts starting-amount
     (current-amount 0)
 )
 
-; Insert as many quarters as possible without exceeding 65 cents.
+; In this rule, I'm trying to insert as many quarters as possible without going over 65 cents.
 (defrule insert-quarter
     ?f <- (current-amount ?x)
-    (coin quarter ?value)
+    (changes QUARTER-VALUE value ?value)
     (test (< (+ ?x ?value) 66))
     =>
     (retract ?f)
@@ -33,11 +34,11 @@
     (printout t "Inserted a quarter. Current amount: " (+ ?x ?value) " cents." crlf)
 )
 
-; Insert as many dimes as possible when quarters are no longer optimal.
+; If inserting another quarter would exceed 65 cents, I'll then try to insert dimes.
 (defrule insert-dime
     ?f <- (current-amount ?x)
-    (coin dime ?value)
-    (coin quarter ?qvalue)
+    (changes DIME-VALUE value ?value)
+    (changes QUARTER-VALUE value ?qvalue)
     (test (>= (+ ?x ?qvalue) 66))
     (test (< (+ ?x ?value) 66))
     =>
@@ -46,12 +47,12 @@
     (printout t "Inserted a dime. Current amount: " (+ ?x ?value) " cents." crlf)
 )
 
-; Insert nickels when dimes and quarters are no longer optimal.
+; If neither quarters nor dimes are optimal, I'll insert nickels.
 (defrule insert-nickel
     ?f <- (current-amount ?x)
-    (coin nickel ?value)
-    (coin dime ?dvalue)
-    (coin quarter ?qvalue)
+    (changes NICKEL-VALUE value ?value)
+    (changes DIME-VALUE value ?dvalue)
+    (changes QUARTER-VALUE value ?qvalue)
     (test (>= (+ ?x ?dvalue) 66))
     (test (>= (+ ?x ?qvalue) 66))
     (test (< ?x 65))
@@ -61,18 +62,18 @@
     (printout t "Inserted a nickel. Current amount: " (+ ?x ?value) " cents." crlf)
 )
 
-; Rule to halt the execution when the purchase is complete
+; Once I've achieved the required amount for the purchase, I'll trigger this rule.
 (defrule purchase-complete
     ?f <- (current-amount ?x)
     (test (>= ?x 65))
     =>
     (retract ?f)
-    (assert (completed)) ; Assert the completed fact
+    (assert (completed)) ; I'm marking the purchase as completed.
     (printout t "Purchase complete! You have inserted a total of " ?x " cents." crlf)
-    (halt) ; This will stop the rule execution
+    (halt) ; I'll halt the system after the purchase is complete.
 )
 
-; Reset rule to initialize the program
+; If I ever need to reset the program, I'll use this rule to set the current amount back to zero.
 (defrule reset
     ?f <- (current-amount ?x)
     ?c <- (completed)
@@ -82,8 +83,8 @@
     (printout t "Vending machine reset. Current amount: 0 cents." crlf)
 )
 
-; Main function to run the program
+; This is the main function. I'll run it to start the program.
 (deffunction main ()
     (reset)
-    (run) ; This will cause CLIPS to execute the rules
+    (run) ; I'm instructing CLIPS to begin executing the rules.
 )
